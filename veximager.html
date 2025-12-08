@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VEX IQ Gen 2 Imager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon"
+        href="https://media.discordapp.net/attachments/1359339305146908735/1444706636710023239/veximager.jpg?ex=692daf67&is=692c5de7&hm=ce1e29be1c282f0fc1acb6a17341b521877e952b6e27a03c3f6a19fa9883f16e&=&format=webp&width=779&height=779"
+        type="image/x-icon">
+    <style>
+        :root {
+            --glass-bg: rgba(10, 10, 20, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --accent: #007AFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-primary);
+            background: #000;
+            display: flex;
+        }
+
+        .video-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%) scale(1.1);
+            object-fit: cover;
+            z-index: -2;
+            filter: blur(8px) brightness(0.5);
+        }
+
+        /* --- LAYOUT --- */
+        .main-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        /* --- MAIN GLASS CARD --- */
+        .glass-card {
+            width: 100%;
+            max-width: 750px;
+            height: 550px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-style {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-style span {
+            font-weight: 300;
+            opacity: 0.7;
+        }
+
+        .card-title-pos {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 5;
+        }
+
+        /* Visualizer Area */
+        .display-stage {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .brain-wrapper {
+            position: relative;
+            width: 434px;
+            height: 324px;
+            transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .brain-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        canvas {
+            position: absolute;
+            top: 88px;
+            left: 129px;
+            width: 175px;
+            height: 131px;
+            background: #000;
+            z-index: 1;
+            image-rendering: pixelated;
+            transition: 0.3s;
+            box-shadow: 0 0 0 1px #111;
+        }
+
+        /* "Raw" Mode (No Brain Overlay) */
+        .brain-wrapper.raw-mode .brain-img {
+            opacity: 0;
+        }
+
+        .brain-wrapper.raw-mode canvas {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(2.5);
+            border: 1px solid #555;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .card-footer {
+            height: 70px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 30px;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
+
+        /* --- COMPACT CODE POPUP --- */
+        .code-popup {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: rgba(10, 10, 12, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-popup.active {
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: #fff;
+            border-bottom: 1px solid #333;
+        }
+
+        .popup-content {
+            flex: 1;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+
+        /* --- WIDE SIDEBAR (GLASS STYLE) --- */
+        .sidebar {
+            width: 380px;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid var(--glass-border);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 50;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .control-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: 0.3s;
+        }
+
+        .control-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .lbl {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #aaa;
+            letter-spacing: 1px;
+        }
+
+        .file-upload {
+            position: relative;
+            width: 100%;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+
+        .file-upload:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .file-upload input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-spacer {
+            margin-top: auto;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            padding: 5px;
+            transition: 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+        }
+
+        .credit-text {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <video autoplay muted loop class="video-bg">
+        <source src="https://motionbgs.com/media/1041/snowfall-in-forest.960x540.mp4" type="video/mp4">
+    </video>
+
+    <!-- CENTER -->
+    <div class="main-area">
+        <div class="glass-card">
+
+            <div class="title-style card-title-pos">VEX <span>IMAGER</span></div>
+
+            <div class="display-stage">
+                <div class="brain-wrapper" id="viz-wrapper">
+                    <img src="https://media.discordapp.net/attachments/1359339305146908735/1444689193715634359/hollowbrain.png?ex=692d9f28&is=692c4da8&hm=4bcb3b6d170e20e37046fe89c9149d12a9a1e763d962c9cbea100025158cdfb8&=&format=webp&quality=lossless&width=434&height=324"
+                        class="brain-img">
+                    <canvas id="vex-canvas" width="159" height="107"></canvas>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <span style="font-size:0.85rem; color:#fff;">Show Brain Overlay</span>
+                <label class="toggle">
+                    <input type="checkbox" id="brain-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- COMPACT CODE POPUP -->
+            <div class="code-popup" id="code-popup">
+                <div class="popup-header">
+                    <span>GENERATED C++</span>
+                    <i class="fa-solid fa-chevron-down close-btn" onclick="toggleCode()"></i>
+                </div>
+                <div class="popup-content">
+                    <textarea id="output" readonly></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- WIDE SIDEBAR -->
+    <div class="sidebar">
+        <!-- Matching Title -->
+        <div class="sidebar-header title-style">VEX <span>IMAGER</span></div>
+
+        <div class="control-item">
+            <span class="lbl">Source Image</span>
+            <div class="file-upload">
+                <div class="file-name" id="file-txt"><i class="fa-solid fa-cloud-arrow-up"></i> Upload File</div>
+                <input type="file" id="inp" accept="image/*">
+            </div>
+        </div>
+
+        <div class="control-item">
+            <span class="lbl">Configuration</span>
+            <div class="row">
+                <span>Dithering</span>
+                <label class="toggle">
+                    <input type="checkbox" id="dith">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="control-item" style="cursor: pointer;" onclick="toggleCode()">
+            <div class="row">
+                <span style="font-weight:500;">View Code</span>
+                <i class="fa-solid fa-code"></i>
+            </div>
+        </div>
+
+        <!-- NEW EXPORT BUTTON -->
+        <button class="btn btn-spacer" onclick="downloadFile()">
+            <i class="fa-solid fa-file-export"></i> Export .iqcpp
+        </button>
+
+        <button class="btn" onclick="cp()">
+            <i class="fa-regular fa-copy"></i> Copy to Clipboard
+        </button>
+
+        <!-- CREDITS -->
+        <div class="credit-text">
+            Made with <i class="fa-solid fa-heart" style="color: #ff4757;"></i> by glitch
+        </div>
+    </div>
+
+    <script>
+        const cvs = document.getElementById('vex-canvas');
+        const ctx = cvs.getContext('2d');
+        const out = document.getElementById('output');
+        const popup = document.getElementById('code-popup');
+        const wrapper = document.getElementById('viz-wrapper');
+        const fileTxt = document.getElementById('file-txt');
+        let rawImg = null;
+
+        const TARGET_W = 159;
+        const TARGET_H = 107;
+
+        // VEX IQ Colors Map
+        const colors = {
+            "0": [0, 0, 0],
+            "1": [0, 0, 255],
+            "2": [0, 255, 255],
+            "3": [127, 0, 255],
+            "4": [0, 255, 0],
+            "5": [255, 127, 0],
+            "6": [127, 0, 255],
+            "7": [255, 0, 0],
+            "8": [255, 64, 0],
+            "9": [196, 64, 255],
+            "A": [127, 0, 255],
+            "B": [255, 255, 255],
+            "C": [255, 255, 0],
+            "D": [127, 255, 0],
+            "E": [255, 191, 0]
+        };
+
+        const keys = Object.keys(colors);
+
+        // UI Handlers
+        document.getElementById('brain-toggle').addEventListener('change', (e) => {
+            if (e.target.checked) wrapper.classList.remove('raw-mode');
+            else wrapper.classList.add('raw-mode');
+        });
+
+        document.getElementById('inp').onchange = e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            fileTxt.innerHTML = `<i class="fa-solid fa-check"></i> ${f.name.substring(0, 12)}...`;
+            const r = new FileReader();
+            r.onload = ev => {
+                const i = new Image();
+                i.onload = () => {rawImg = i; run();}
+                i.src = ev.target.result;
+            }
+            r.readAsDataURL(f);
+        };
+
+        document.getElementById('dith').onchange = () => {if (rawImg) run();};
+
+        // Core Logic
+        function run() {
+            ctx.fillStyle = "rgb(51,51,51)";
+            ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+            ctx.drawImage(rawImg, 0, 0, TARGET_W, TARGET_H);
+
+            const imgData = ctx.getImageData(0, 0, TARGET_W, TARGET_H);
+            const data = imgData.data;
+            const doDither = document.getElementById('dith').checked;
+
+            if (doDither) {
+                for (let y = 0; y < TARGET_H; y++) {
+                    for (let x = 0; x < TARGET_W; x++) {
+                        const i = (y * TARGET_W + x) * 4;
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+
+                        const bestKey = getBestColorKey(r, g, b);
+                        const bestRGB = colors[bestKey];
+
+                        data[i] = bestRGB[0];
+                        data[i + 1] = bestRGB[1];
+                        data[i + 2] = bestRGB[2];
+
+                        const errR = r - bestRGB[0];
+                        const errG = g - bestRGB[1];
+                        const errB = b - bestRGB[2];
+
+                        distributeError(data, x + 1, y, errR, errG, errB, 7 / 16);
+                        distributeError(data, x - 1, y + 1, errR, errG, errB, 3 / 16);
+                        distributeError(data, x, y + 1, errR, errG, errB, 5 / 16);
+                        distributeError(data, x + 1, y + 1, errR, errG, errB, 1 / 16);
+                    }
+                }
+            }
+
+            let nums = [];
+            let currNum = "";
+
+            for (let i = 0; i < TARGET_W * TARGET_H; i++) {
+                const x = i % TARGET_W;
+                const y = Math.floor(i / TARGET_W);
+                const pIndex = (y * TARGET_W + x) * 4;
+
+                let r = data[pIndex];
+                let g = data[pIndex + 1];
+                let b = data[pIndex + 2];
+
+                const name = getBestColorKey(r, g, b);
+                const cVal = colors[name];
+
+                data[pIndex] = cVal[0];
+                data[pIndex + 1] = cVal[1];
+                data[pIndex + 2] = cVal[2];
+
+                currNum += name;
+                if (currNum.length === 16) {
+                    nums.push("0x" + currNum);
+                    currNum = "";
+                }
+            }
+
+            while (currNum.length > 0 && currNum.length < 16) {
+                currNum += "0";
+            }
+            if (currNum.length === 16) nums.push("0x" + currNum);
+
+            ctx.putImageData(imgData, 0, 0);
+
+            const arrayStr = nums.join(",");
+            const cppCode =
+                `unsigned long long imgData[${nums.length}] = {${arrayStr}};
+
+for(int i = 0; i < 17013; i++) {
+    int x = i % 159;
+    int y = i / 159; 
+    int currNum = i / 16; 
+    int sliding = i % 16;
+    sliding = 15-sliding;
+    int col = (imgData[currNum] >> (4*sliding)) & 15; 
+    if(col == 0) continue;
+    if(col == 1) Brain.Screen.setPenColor(blue);
+    if(col == 2) Brain.Screen.setPenColor(blue_green); 
+    if(col == 3) Brain.Screen.setPenColor(blue_violet); 
+    if(col == 4) Brain.Screen.setPenColor(green);
+    if(col == 5) Brain.Screen.setPenColor(orange);
+    if(col == 6) Brain.Screen.setPenColor(purple);
+    if(col == 7) Brain.Screen.setPenColor(red);
+    if(col == 8) Brain.Screen.setPenColor(red_orange);
+    if(col == 9) Brain.Screen.setPenColor(red_violet);
+    if(col == 10) Brain.Screen.setPenColor(violet);
+    if(col == 11) Brain.Screen.setPenColor(white);
+    if(col == 12) Brain.Screen.setPenColor(yellow);
+    if(col == 13) Brain.Screen.setPenColor(yellow_green);
+    if(col == 14) Brain.Screen.setPenColor(yellow_orange);
+    Brain.Screen.drawPixel(x,y);
+}`;
+
+            out.value = cppCode;
+        }
+
+        function getBestColorKey(r, g, b) {
+            let bestDist = Infinity;
+            let bestKey = "0";
+            for (let k of keys) {
+                const c = colors[k];
+                const d = (c[0] - r) ** 2 + (c[1] - g) ** 2 + (c[2] - b) ** 2;
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestKey = k;
+                }
+            }
+            return bestKey;
+        }
+
+        function distributeError(data, x, y, er, eg, eb, factor) {
+            if (x >= 0 && x < TARGET_W && y < TARGET_H) {
+                const idx = (y * TARGET_W + x) * 4;
+                data[idx] = data[idx] + er * factor;
+                data[idx + 1] = data[idx + 1] + eg * factor;
+                data[idx + 2] = data[idx + 2] + eb * factor;
+            }
+        }
+
+        // Export Template Logic
+        const baseTemplate = `#pragma region VEXcode Generated Robot Configuration
+// Make sure all required headers are included.
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+#include <string.h>
+
+
+#include "vex.h"
+
+using namespace vex;
+
+// Brain should be defined by default
+brain Brain;
+
+
+// START IQ MACROS
+#define waitUntil(condition)                                                   \\
+  do {                                                                         \\
+    wait(5, msec);                                                             \\
+  } while (!(condition))
+
+#define repeat(iterations)                                                     \\
+  for (int iterator = 0; iterator < iterations; iterator++)
+// END IQ MACROS
+
+
+// Robot configuration code.
+inertial BrainInertial = inertial();
+
+
+// generating and setting random seed
+void initializeRandomSeed(){
+  wait(100,msec);
+  double xAxis = BrainInertial.acceleration(xaxis) * 1000;
+  double yAxis = BrainInertial.acceleration(yaxis) * 1000;
+  double zAxis = BrainInertial.acceleration(zaxis) * 1000;
+  // Combine these values into a single integer
+  int seed = int(
+    xAxis + yAxis + zAxis
+  );
+  // Set the seed
+  srand(seed); 
+}
+
+
+
+void vexcodeInit() {
+
+  // Initializing random seed.
+  initializeRandomSeed(); 
+}
+
+#pragma endregion VEXcode Generated Robot Configuration
+
+//----------------------------------------------------------------------------
+//                                                                            
+//    Module:       main.cpp                                                  
+//    Author:       {author}                                                  
+//    Created:      {date}                                                    
+//    Description:  IQ project                                                
+//                                                                            
+//----------------------------------------------------------------------------
+
+// Include the IQ Library
+#include "iq_cpp.h"
+
+// Allows for easier use of the VEX Library
+using namespace vex;
+
+int main() {
+  // Initializing Robot Configuration. DO NOT REMOVE!
+  vexcodeInit();
+  // Begin project code
+  
+}`;
+
+        window.downloadFile = () => {
+            const rawCode = out.value;
+            if (!rawCode) {
+                alert("Please upload an image first.");
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            // Inject variables
+            let finalCode = baseTemplate.replace("{author}", "Glitch").replace("{date}", today);
+
+            // Inject Generated Code
+            finalCode = finalCode.replace("// Begin project code", "// Begin project code\n" + rawCode);
+
+            // Trigger Download
+            const blob = new Blob([finalCode], {type: 'text/plain'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "generated.iqcpp";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        };
+
+        window.toggleCode = () => {popup.classList.toggle('active');};
+        window.cp = () => {out.select(); document.execCommand('copy'); alert("Copied!");};
+    </script>
+</body>
+
+</html>

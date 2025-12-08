@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glitch</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        @font-face {
+            font-family: 'Marola';
+            src: url('marola.TTF') format('truetype');
+        }
+
+        :root {
+            --card-width: 620px;
+            --card-bg: rgba(10, 10, 20, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        #entry-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            cursor: pointer;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #entry-screen h1 {
+            font-family: 'Marola', sans-serif;
+            font-size: 2.5rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+        }
+
+        #desktop-content {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in 0.2s;
+            padding-bottom: 3vh;
+        }
+
+        .video-background {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+            z-index: -2;
+        }
+
+        #bg-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(8px) brightness(0.5);
+            transform: scale(1.1);
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+        }
+
+        .view-hidden {
+            opacity: 0;
+            transform: scale(0.98);
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .top-left-controls {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .volume-control,
+        .projects-button,
+        .home-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: width 0.3s ease, background-color 0.2s ease;
+            width: 45px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .volume-control:hover {
+            width: 170px;
+        }
+
+        .volume-control i {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .projects-button,
+        .home-button {
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .projects-button:hover,
+        .home-button:hover {
+            width: 130px;
+        }
+
+        .projects-text,
+        .home-text {
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease 0.1s;
+        }
+
+        .projects-button:hover .projects-text,
+        .home-button:hover .home-text {
+            opacity: 1;
+        }
+
+        .home-button {
+            display: none;
+        }
+
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            outline: none;
+            opacity: 0;
+            transition: max-width 0.3s ease-in-out, opacity 0.2s ease-in-out 0.1s;
+            max-width: 0;
+            cursor: pointer;
+        }
+
+        .volume-control:hover #volume-slider {
+            opacity: 1;
+            max-width: 100px;
+        }
+
+        #volume-slider::-webkit-slider-thumb,
+        #volume-slider::-moz-range-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            border: none;
+        }
+
+        .profile-card,
+        .music-card,
+        .projects-container {
+            width: var(--card-width);
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-card {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            perspective: 1000px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        .username {
+            font-family: 'Marola', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+
+        .bio {
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 15px;
+            padding: 12px 20px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-avatar-container {
+            position: relative;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .status-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .online-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            background-color: #3ba55d;
+            border-radius: 50%;
+            border: 3px solid #2f3136;
+        }
+
+        .status-details-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .status-text {
+            text-align: left;
+        }
+
+        .status-title {
+            font-family: 'Marola', sans-serif;
+            font-weight: 500;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-detail {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .presence-images {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .presence-images img {
+            height: 32px;
+            width: auto;
+            border-radius: 6px;
+            object-fit: cover;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .presence-images img:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        .card-footer {
+            width: 100%;
+            padding-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .views,
+        .say-hi {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .views i {
+            font-size: 1rem;
+        }
+
+        .say-hi {
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease-out, filter 0.2s ease-out;
+        }
+
+        .say-hi:hover {
+            filter: brightness(1.3);
+        }
+
+        .say-hi:active {
+            transform: scale(0.95);
+        }
+
+        .music-card {
+            padding: 15px 25px;
+        }
+
+        .music-player {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .album-cover {
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .song-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+
+        .song-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background-color: var(--text-primary);
+            border-radius: 2px;
+        }
+
+        .time-stamps {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 1.1rem;
+        }
+
+        .controls i {
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .controls i:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .projects-container {
+            width: 80vw;
+            max-width: 900px;
+            padding: 30px;
+        }
+
+        .projects-container h1 {
+            font-family: 'Marola', sans-serif;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .projects-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .project-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+            perspective: 1000px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .project-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 15px;
+            object-fit: cover;
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        .project-name {
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 680px) {
+            body {
+                /* Add padding to prevent content from going under fixed controls */
+                padding-top: 80px;
+                padding-bottom: 20px;
+                /* Allow scrolling on mobile if content overflows */
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .profile-card,
+            .music-card,
+            .projects-container {
+                width: 95vw;
+                max-width: 400px;
+            }
+
+            .username {
+                font-size: 2.2rem;
+            }
+
+            .bio {
+                font-size: 0.95rem;
+            }
+
+            .profile-card {
+                padding: 20px;
+            }
+
+            .status-title {
+                font-size: 1.2rem;
+            }
+
+            .music-player {
+                gap: 10px;
+            }
+
+            .song-info {
+                margin: 0 8px;
+            }
+
+            .controls {
+                gap: 15px;
+            }
+
+            #entry-screen h1 {
+                font-size: 2rem;
+            }
+
+            .top-left-controls {
+                flex-direction: row;
+                gap: 10px;
+                top: 15px;
+                left: 15px;
+            }
+
+            .container {
+                gap: 15px;
+            }
+
+            .project-icon {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="entry-screen">
+        <h1>Click to Enter</h1>
+    </div>
+
+    <div id="desktop-content">
+        <audio id="audio-player"></audio>
+
+        <div class="video-background">
+            <video autoplay muted loop id="bg-video">
+                <source src="https://motionbgs.com/media/5251/mist-covered-mountain.960x540.mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <div class="top-left-controls">
+            <div class="volume-control">
+                <i class="fa-solid fa-volume-high"></i>
+                <input type="range" id="volume-slider" min="0" max="100" value="100">
+            </div>
+            <div id="projects-button" class="projects-button">
+                <i class="fa-solid fa-folder"></i>
+                <span class="projects-text">Projects</span>
+            </div>
+            <div id="home-button" class="home-button">
+                <i class="fa-solid fa-house"></i>
+                <span class="home-text">Home</span>
+            </div>
+        </div>
+
+        <div class="home-container container">
+            <main class="profile-card">
+                <img id="profile-avatar" src="https://i.postimg.cc/mktHrnyr/iceee.jpg" alt="Profile Avatar"
+                    class="profile-avatar">
+                <h1 class="username">glitch</h1>
+                <p class="bio">Heyyy</p>
+                <div class="status-box">
+                    <div class="status-avatar-container">
+                        <img src="https://i.postimg.cc/mktHrnyr/iceee.jpg" alt="Status Avatar" class="status-avatar">
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="status-details-container">
+                        <div class="status-text">
+                            <p class="status-title">Glitch</p>
+                            <p class="status-detail">🧊 Chillin</p>
+                        </div>
+                        <div class="presence-images">
+                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png"
+                                alt="swapping icon" id="swapping-image">
+                            <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
+                                alt="spotify icon">
+                            <img src="https://cdn.freebiesupply.com/logos/large/2x/minecraft-1-logo-png-transparent.png"
+                                alt="minecraft icon">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="views">
+                        <i class="fa-solid fa-eye"></i>
+                        <span id="view-count">...</span>
+                    </div>
+                    <div class="say-hi" id="say-hi-button">
+                        <span>Say Hi!👋</span>
+                        <span id="say-hi-count">...</span>
+                    </div>
+                </div>
+            </main>
+            <div class="music-card">
+                <div class="music-player">
+                    <img src="" alt="Album Cover" class="album-cover" id="album-cover">
+                    <div class="song-info">
+                        <p class="song-title" id="song-title">Loading...</p>
+                        <div class="progress-bar" id="progress-bar">
+                            <div class="progress" id="progress"></div>
+                        </div>
+                        <div class="time-stamps">
+                            <span id="current-time">0:00</span>
+                            <span id="total-time">0:00</span>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <i class="fa-solid fa-backward-step" id="prev-btn"></i>
+                        <i class="fa-solid fa-play" id="play-pause-btn"></i>
+                        <i class="fa-solid fa-forward-step" id="next-btn"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="projects-container container view-hidden">
+            <h1>Projects</h1>
+            <div class="projects-grid">
+                <a href="/veximager.html" target="_blank" class="project-item">
+                    <img class="project-icon"
+                        src="https://i.postimg.cc/d34MVJwN/veximager.jpg>
+                    <p class="project-name">Vex Imager</p>
+                </a>
+                <a href="gkit.html" target="_blank" class="project-item">
+                    <img class="project-icon"
+                        src="https://image2url.com/images/1759596176637-d11ad332-7306-422e-af2b-b91e46893417.jpg">
+                    <p class="project-name">GKIT</p>
+                </a>
+                <a href="/whitet.html" target="_blank" class="project-item">
+                    <img class="project-icon"
+                        src="https://image2url.com/images/1759596618157-279d9507-1615-4b78-b732-76028a929d37.webp">
+                    <p class="project-name">Whitet</p>
+                </a>
+                <a href="#" target="_blank" class="project-item">
+                    <img class="project-icon" src="https://placehold.co/120x120/f1f1f1f1/000000?text=Project+4">
+                    <p class="project-name">Project Four</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const entryScreen = document.getElementById('entry-screen');
+            const desktopContent = document.getElementById('desktop-content');
+            const audioPlayer = document.getElementById('audio-player');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const albumCoverImg = document.getElementById('album-cover');
+            const songTitleEl = document.getElementById('song-title');
+
+            const songs = [
+                {songFile: 'after.mp3', songName: 'After Party - Don Toliver', albumCover: 'https://i1.sndcdn.com/artworks-MUe0sOoezI9ORG2U-YTIzhA-t1080x1080.jpg'},
+                {songFile: 'lil tecca - dark.mp3', songName: 'Dark Thoughts - Lil Tecca', albumCover: 'https://images.genius.com/d1b9e0fdf120bf30418d9decdf195b20.1000x1000x1.png'},
+                {songFile: 'lil tecca - 500.mp3', songName: '500 lbs - Lil Tecca', albumCover: 'https://th.bing.com/th/id/OIP.HoO0DQSjcgzFUPHUTa7UBQHaHa?rs=1&pid=ImgDetMain&cb=idpwebp2&o=7&rm=3'}
+            ];
+            let currentSongIndex;
+
+            function loadSong(index) {
+                const song = songs[index];
+                audioPlayer.src = song.songFile;
+                albumCoverImg.src = song.albumCover;
+                songTitleEl.textContent = song.songName;
+                audioPlayer.load();
+            }
+
+            function nextSong() {
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+                loadSong(currentSongIndex);
+                playAudio();
+            }
+
+            function prevSong() {
+                currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+                loadSong(currentSongIndex);
+                playAudio();
+            }
+
+            entryScreen.addEventListener('click', () => {
+                desktopContent.style.display = 'flex';
+                setTimeout(() => {desktopContent.style.opacity = '1';}, 10);
+                entryScreen.style.opacity = '0';
+                setTimeout(() => {entryScreen.style.display = 'none';}, 500);
+                playAudio();
+            }, {once: true});
+
+            const homeContainer = document.querySelector('.home-container');
+            const projectsContainer = document.querySelector('.projects-container');
+            const projectsButton = document.getElementById('projects-button');
+            const homeButton = document.getElementById('home-button');
+            projectsButton.addEventListener('click', () => {
+                homeContainer.classList.add('view-hidden');
+                projectsContainer.classList.remove('view-hidden');
+                projectsButton.style.display = 'none';
+                homeButton.style.display = 'flex';
+            });
+            homeButton.addEventListener('click', () => {
+                projectsContainer.classList.add('view-hidden');
+                homeContainer.classList.remove('view-hidden');
+                homeButton.style.display = 'none';
+                projectsButton.style.display = 'flex';
+            });
+
+            (() => {
+                const viewCountEl = document.getElementById('view-count');
+                const sayHiButton = document.getElementById('say-hi-button');
+                const sayHiCountEl = document.getElementById('say-hi-count');
+                const today = new Date().toISOString().split('T')[0];
+                let lastVisit = localStorage.getItem('lastVisitDate');
+                let count = parseInt(localStorage.getItem('fakeViewCount'), 10);
+                if (lastVisit === today && !isNaN(count)) {viewCountEl.textContent = count;} else {
+                    if (isNaN(count)) {count = 562;} else {count += Math.floor(Math.random() * 4) + 4;}
+                    localStorage.setItem('fakeViewCount', count);
+                    localStorage.setItem('lastVisitDate', today);
+                    viewCountEl.textContent = count;
+                }
+                let hiCount = parseInt(localStorage.getItem('sayHiCount'), 10);
+                if (isNaN(hiCount)) {hiCount = 6791;}
+                sayHiCountEl.textContent = hiCount;
+                sayHiButton.addEventListener('click', () => {
+                    hiCount++;
+                    sayHiCountEl.textContent = hiCount;
+                    localStorage.setItem('sayHiCount', hiCount);
+                });
+            })();
+
+            const profileAvatar = document.getElementById('profile-avatar');
+            const applyTiltEffect = (element) => {
+                element.addEventListener('mousemove', (e) => {
+                    const rect = element.getBoundingClientRect();
+                    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                    const centerX = rect.width / 2, centerY = rect.height / 2;
+                    const deltaX = x - centerX, deltaY = y - centerY;
+                    const maxRotate = 15;
+                    const rotateX = (deltaY / centerY) * -maxRotate;
+                    const rotateY = (deltaX / centerX) * maxRotate;
+                    element.style.boxShadow = '0px 15px 30px rgba(0, 0, 0, 0.4)';
+                    element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+                });
+                element.addEventListener('mouseleave', () => {
+                    element.style.boxShadow = 'none';
+                    element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                });
+            };
+            applyTiltEffect(profileAvatar);
+            document.querySelectorAll('.project-icon').forEach(applyTiltEffect);
+
+            const swappingImage = document.getElementById('swapping-image');
+            const imageUrls = [
+                'https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png',
+                'https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png',
+                'https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png'
+            ];
+            let currentImageIndexSwap = 0;
+            setInterval(() => {
+                currentImageIndexSwap = (currentImageIndexSwap + 1) % imageUrls.length;
+                swappingImage.src = imageUrls[currentImageIndexSwap];
+            }, 600);
+
+            const playAudio = () => {
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        playPauseBtn.classList.remove('fa-play');
+                        playPauseBtn.classList.add('fa-pause');
+                    }).catch(error => {console.error("Audio play failed:", error);});
+                }
+            };
+
+            playPauseBtn.addEventListener('click', () => {
+                if (audioPlayer.paused) {playAudio();} else {
+                    audioPlayer.pause();
+                    playPauseBtn.classList.remove('fa-pause');
+                    playPauseBtn.classList.add('fa-play');
+                }
+            });
+
+            const volumeSlider = document.getElementById('volume-slider');
+            const progressBar = document.getElementById('progress-bar'), progress = document.getElementById('progress');
+            const currentTimeEl = document.getElementById('current-time'), totalTimeEl = document.getElementById('total-time');
+            const formatTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+            audioPlayer.addEventListener('timeupdate', () => {
+                const {currentTime, duration} = audioPlayer;
+                if (duration) {
+                    progress.style.width = `${(currentTime / duration) * 100}%`;
+                    currentTimeEl.textContent = formatTime(currentTime);
+                }
+            });
+            volumeSlider.addEventListener('input', (e) => {audioPlayer.volume = e.target.value / 100;});
+            audioPlayer.addEventListener('loadedmetadata', () => {totalTimeEl.textContent = formatTime(audioPlayer.duration);});
+            progressBar.addEventListener('click', (e) => {
+                const {clientWidth} = progressBar;
+                const {offsetX} = e;
+                if (audioPlayer.duration) {audioPlayer.currentTime = (offsetX / clientWidth) * audioPlayer.duration;}
+            });
+            nextBtn.addEventListener('click', nextSong);
+            prevBtn.addEventListener('click', prevSong);
+            audioPlayer.addEventListener('ended', nextSong);
+
+            currentSongIndex = Math.floor(Math.random() * songs.length);
+            loadSong(currentSongIndex);
+        });
+    </script>
+</body>
+
+</html>
