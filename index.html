@@ -5,11 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glitch</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -25,6 +23,7 @@
             --card-bg: rgba(10, 10, 20, 0.1);
             --text-primary: #ffffff;
             --text-secondary: #e0e0e0;
+            --warning-orange: #ff9f43;
         }
 
         * {
@@ -56,7 +55,7 @@
         }
 
         #entry-screen h1 {
-            font-family: 'Marola', sans-serif;
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif;
             font-size: 2.5rem;
             color: white;
             text-transform: uppercase;
@@ -65,20 +64,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 0.7;
-            }
-
-            50% {
-                transform: scale(1.05);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 0.7;
-            }
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
         }
 
         #desktop-content {
@@ -116,13 +104,15 @@
             align-items: center;
             gap: 20px;
             transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+            position: absolute; 
+            pointer-events: auto;
         }
 
         .view-hidden {
             opacity: 0;
-            transform: scale(0.98);
+            transform: scale(0.95);
             pointer-events: none;
-            position: absolute;
+            z-index: -1;
         }
 
         .top-left-controls {
@@ -136,8 +126,7 @@
         }
 
         .volume-control,
-        .projects-button,
-        .home-button {
+        .nav-button {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -150,76 +139,33 @@
             width: 45px;
             overflow: hidden;
             cursor: pointer;
-        }
-
-        .volume-control:hover {
-            width: 170px;
-        }
-
-        .volume-control i {
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .projects-button,
-        .home-button {
             text-decoration: none;
             color: var(--text-primary);
         }
 
-        .projects-button:hover,
-        .home-button:hover {
-            width: 130px;
-        }
-
-        .projects-text,
-        .home-text {
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.3s ease 0.1s;
-        }
-
-        .projects-button:hover .projects-text,
-        .home-button:hover .home-text {
-            opacity: 1;
-        }
-
-        .home-button {
-            display: none;
-        }
+        .volume-control:hover { width: 170px; }
+        .volume-control i { font-size: 1.2rem; flex-shrink: 0; }
+        
+        .nav-button:hover { width: 130px; }
+        .nav-text { white-space: nowrap; opacity: 0; transition: opacity 0.3s ease 0.1s; }
+        .nav-button:hover .nav-text { opacity: 1; }
 
         #volume-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            outline: none;
-            opacity: 0;
+            -webkit-appearance: none; appearance: none;
+            height: 4px; background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px; outline: none; opacity: 0;
             transition: max-width 0.3s ease-in-out, opacity 0.2s ease-in-out 0.1s;
-            max-width: 0;
-            cursor: pointer;
+            max-width: 0; cursor: pointer;
         }
 
-        .volume-control:hover #volume-slider {
-            opacity: 1;
-            max-width: 100px;
-        }
-
-        #volume-slider::-webkit-slider-thumb,
-        #volume-slider::-moz-range-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: var(--text-primary);
-            border-radius: 50%;
-            border: none;
-        }
+        .volume-control:hover #volume-slider { opacity: 1; max-width: 100px; }
+        #volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--text-primary); border-radius: 50%; border: none; }
 
         .profile-card,
         .music-card,
-        .projects-container {
+        .projects-container, 
+        .about-container,
+        #project-details-modal {
             width: var(--card-width);
             background: var(--card-bg);
             backdrop-filter: blur(12px);
@@ -238,333 +184,349 @@
         }
 
         .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 15px;
-            transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+            width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+            margin-bottom: 15px; transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
             transform-style: preserve-3d;
         }
 
         .username {
-            font-family: 'Marola', sans-serif;
-            font-size: 2.8rem;
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif;
+            font-size: 2.8rem; 
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
             margin-bottom: 5px;
             color: var(--text-primary);
         }
 
-        .bio {
-            font-size: 1rem;
-            font-weight: 300;
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-        }
+        .bio { font-size: 1rem; font-weight: 300; color: var(--text-secondary); margin-bottom: 25px; }
 
         .status-box {
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 15px;
-            padding: 12px 20px;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.25); border-radius: 15px; padding: 12px 20px;
+            width: 100%; display: flex; align-items: center; gap: 15px; margin-bottom: 25px;
         }
 
-        .status-avatar-container {
-            position: relative;
-            width: 50px;
-            height: 50px;
-            flex-shrink: 0;
-        }
-
-        .status-avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
+        .status-avatar-container { position: relative; width: 50px; height: 50px; flex-shrink: 0; }
+        .status-avatar { width: 100%; height: 100%; border-radius: 50%; }
         .online-indicator {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 15px;
-            height: 15px;
-            background-color: #3ba55d;
-            border-radius: 50%;
-            border: 3px solid #2f3136;
+            position: absolute; bottom: 0; right: 0; width: 15px; height: 15px;
+            background-color: #3ba55d; border-radius: 50%; border: 3px solid #2f3136;
         }
 
-        .status-details-container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            flex-grow: 1;
-            width: 100%;
+        .status-details-container { display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex-grow: 1; width: 100%; }
+        .status-text { text-align: left; }
+        .status-title { 
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif; 
+            font-weight: 500; 
+            font-size: 1.4rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
         }
+        .status-detail { font-size: 0.85rem; color: var(--text-secondary); }
 
-        .status-text {
-            text-align: left;
-        }
-
-        .status-title {
-            font-family: 'Marola', sans-serif;
-            font-weight: 500;
-            font-size: 1.4rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .status-detail {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .presence-images {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .presence-images { display: flex; align-items: center; gap: 10px; }
         .presence-images img {
-            height: 32px;
-            width: auto;
-            border-radius: 6px;
-            object-fit: cover;
+            height: 32px; width: auto; border-radius: 6px; object-fit: cover;
             transition: transform 0.2s ease, filter 0.2s ease;
         }
+        .presence-images img:hover { transform: scale(1.1); filter: brightness(1.2); }
 
-        .presence-images img:hover {
-            transform: scale(1.1);
-            filter: brightness(1.2);
-        }
+        .card-footer { width: 100%; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .views, .say-hi { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-secondary); }
+        .say-hi { cursor: pointer; user-select: none; transition: transform 0.1s ease-out, filter 0.2s ease-out; }
+        .say-hi:hover { filter: brightness(1.3); }
+        .say-hi:active { transform: scale(0.95); }
 
-        .card-footer {
-            width: 100%;
-            padding-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .views,
-        .say-hi {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .views i {
-            font-size: 1rem;
-        }
-
-        .say-hi {
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.1s ease-out, filter 0.2s ease-out;
-        }
-
-        .say-hi:hover {
-            filter: brightness(1.3);
-        }
-
-        .say-hi:active {
-            transform: scale(0.95);
-        }
-
-        .music-card {
+        .music-card { 
             padding: 15px 25px;
         }
+        .music-player { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 15px; }
+        .album-cover { width: 55px; height: 55px; border-radius: 8px; object-fit: cover; }
+        .song-info { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; flex-grow: 1; margin: 0 10px; }
+        .song-title { font-size: 0.9rem; font-weight: 500; }
+        .progress-bar { width: 100%; height: 4px; background-color: rgba(255, 255, 255, 0.3); border-radius: 2px; cursor: pointer; }
+        .progress { width: 0%; height: 100%; background-color: var(--text-primary); border-radius: 2px; }
+        .time-stamps { display: flex; justify-content: space-between; width: 100%; font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .controls { display: flex; align-items: center; gap: 20px; font-size: 1.1rem; }
+        .controls i { cursor: pointer; opacity: 0.8; transition: opacity 0.2s ease, transform 0.2s ease; }
+        .controls i:hover { opacity: 1; transform: scale(1.1); }
 
-        .music-player {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            gap: 15px;
-        }
-
-        .album-cover {
-            width: 55px;
-            height: 55px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .song-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 5px;
-            flex-grow: 1;
-            margin: 0 10px;
-        }
-
-        .song-title {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-            cursor: pointer;
-        }
-
-        .progress {
-            width: 0%;
-            height: 100%;
-            background-color: var(--text-primary);
-            border-radius: 2px;
-        }
-
-        .time-stamps {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-size: 1.1rem;
-        }
-
-        .controls i {
-            cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-
-        .controls i:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .projects-container {
-            width: 80vw;
-            max-width: 900px;
-            padding: 30px;
-        }
-
-        .projects-container h1 {
-            font-family: 'Marola', sans-serif;
-            font-size: 2.5rem;
-            text-align: center;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .projects-grid {
+        .social-links {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
             gap: 30px;
+            margin-top: 10px; 
+        }
+        
+        .social-link {
+            color: var(--text-secondary);
+            font-size: 1.8rem;
+            transition: transform 0.2s ease, color 0.2s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        .social-link:hover {
+            transform: translateY(-3px);
+            color: white; 
+        }
+
+        .projects-container, .about-container {
+            width: 80vw; max-width: 900px; padding: 30px;
+        }
+        .projects-container h1, .about-container h1 {
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif;
+            font-size: 2.5rem; text-align: center;
+            margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px;
+        }
+        .projects-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; }
+        
         .project-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            text-align: center;
-            perspective: 1000px;
-            text-decoration: none;
-            color: var(--text-primary);
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            text-align: center; perspective: 1000px; text-decoration: none; color: var(--text-primary);
+            cursor: pointer;
+            background: transparent;
+            border: none;
         }
 
         .project-icon {
-            width: 120px;
-            height: 120px;
-            border-radius: 15px;
+            width: 120px; height: 120px; border-radius: 15px; object-fit: cover;
+            background-color: rgba(0, 0, 0, 0.2); 
+            transition: transform 0.4s ease-out, box-shadow 0.4s ease-out; 
+            transform-style: preserve-3d;
+        }
+        .project-name { font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+
+        .discontinued-icon {
+            color: var(--warning-orange);
+            font-size: 0.85rem;
+        }
+
+        #project-details-modal {
+            width: 80vw;
+            max-width: 800px;
+            padding: 0; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+
+        .modal-header {
+            width: 100%;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: flex-start;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .close-btn:hover { color: white; }
+
+        .project-modal-content {
+            display: flex;
+            width: 100%;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        .modal-left {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding-right: 40px;
+            perspective: 1000px;
+        }
+
+        .modal-icon {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
             object-fit: cover;
-            background-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
             transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
             transform-style: preserve-3d;
         }
 
-        .project-name {
+        .modal-project-name {
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif;
+            font-size: 1.8rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-right {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #modal-status {
+            display: none; 
+            background: rgba(255, 159, 67, 0.15);
+            color: var(--warning-orange);
+            border: 1px solid rgba(255, 159, 67, 0.3);
+            padding: 8px 14px;
+            border-radius: 8px;
             font-size: 0.9rem;
+            font-weight: 500;
+            width: fit-content;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-description {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .modal-link-btn {
+            display: inline-block;
+            width: fit-content;
+            padding: 10px 25px;
+            background: white;
+            color: black;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: transform 0.2s, background 0.2s;
+            margin-top: 10px;
+        }
+        .modal-link-btn:hover {
+            transform: translateY(-2px);
+            background: #f0f0f0;
+        }
+
+        .modal-credits {
+            margin-top: auto; 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .credit-item {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .credit-item span {
+            color: white;
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .about-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            text-align: left;
+        }
+        .about-text-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        .contact-item i { width: 20px; text-align: center; }
+        
+        .top-songs-section {
+            margin-top: 10px;
+        }
+        .top-songs-header {
+            font-family: 'Marola', 'Poppins', 'Arial Black', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .song-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .song-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .song-card:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .song-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .song-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .song-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .song-artist {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
         }
 
         @media (max-width: 680px) {
-            body {
-                /* Add padding to prevent content from going under fixed controls */
-                padding-top: 80px;
-                padding-bottom: 20px;
-                /* Allow scrolling on mobile if content overflows */
-                overflow-y: auto;
-                overflow-x: hidden;
-            }
-
-            .profile-card,
-            .music-card,
-            .projects-container {
-                width: 95vw;
-                max-width: 400px;
-            }
-
-            .username {
-                font-size: 2.2rem;
-            }
-
-            .bio {
-                font-size: 0.95rem;
-            }
-
-            .profile-card {
-                padding: 20px;
-            }
-
-            .status-title {
-                font-size: 1.2rem;
-            }
-
-            .music-player {
-                gap: 10px;
-            }
-
-            .song-info {
-                margin: 0 8px;
-            }
-
-            .controls {
-                gap: 15px;
-            }
-
-            #entry-screen h1 {
-                font-size: 2rem;
-            }
-
-            .top-left-controls {
-                flex-direction: row;
-                gap: 10px;
-                top: 15px;
-                left: 15px;
-            }
-
-            .container {
-                gap: 15px;
-            }
-
-            .project-icon {
-                width: 100px;
-                height: 100px;
-            }
+            body { padding-top: 80px; padding-bottom: 20px; overflow-y: auto; overflow-x: hidden; }
+            .profile-card, .music-card, .projects-container, .about-container, #project-details-modal { width: 95vw; max-width: 400px; }
+            .username { font-size: 2.2rem; }
+            .bio { font-size: 0.95rem; }
+            .profile-card { padding: 20px; }
+            .project-modal-content { flex-direction: column; padding: 25px; gap: 20px; }
+            .modal-left { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-right: 0; padding-bottom: 20px; }
+            .modal-right { width: 100%; }
+            .modal-icon { width: 100px; height: 100px; }
+            .modal-project-name { font-size: 1.5rem; }
+            .top-left-controls { flex-direction: row; gap: 10px; top: 15px; left: 15px; }
+            .container { gap: 15px; }
         }
     </style>
 </head>
@@ -588,20 +550,26 @@
                 <i class="fa-solid fa-volume-high"></i>
                 <input type="range" id="volume-slider" min="0" max="100" value="100">
             </div>
-            <div id="projects-button" class="projects-button">
-                <i class="fa-solid fa-folder"></i>
-                <span class="projects-text">Projects</span>
-            </div>
-            <div id="home-button" class="home-button">
+            
+            <div id="home-button" class="nav-button">
                 <i class="fa-solid fa-house"></i>
-                <span class="home-text">Home</span>
+                <span class="nav-text">Home</span>
+            </div>
+
+            <div id="projects-button" class="nav-button">
+                <i class="fa-solid fa-folder"></i>
+                <span class="nav-text">Projects</span>
+            </div>
+
+            <div id="about-button" class="nav-button">
+                <i class="fa-solid fa-user"></i>
+                <span class="nav-text">About Me</span>
             </div>
         </div>
 
         <div class="home-container container">
             <main class="profile-card">
-                <img id="profile-avatar" src="https://i.postimg.cc/mktHrnyr/iceee.jpg" alt="Profile Avatar"
-                    class="profile-avatar">
+                <img id="profile-avatar" src="https://i.postimg.cc/mktHrnyr/iceee.jpg" alt="Profile Avatar" class="profile-avatar">
                 <h1 class="username">glitch</h1>
                 <p class="bio">fantastic four a reason</p>
                 <div class="status-box">
@@ -615,12 +583,9 @@
                             <p class="status-detail">🧊 Chillin</p>
                         </div>
                         <div class="presence-images">
-                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png"
-                                alt="swapping icon" id="swapping-image">
-                            <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png"
-                                alt="spotify icon">
-                            <img src="https://cdn.freebiesupply.com/logos/large/2x/minecraft-1-logo-png-transparent.png"
-                                alt="minecraft icon">
+                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" alt="swapping icon" id="swapping-image">
+                            <img src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Green.png" alt="spotify icon">
+                            <img src="https://cdn.freebiesupply.com/logos/large/2x/minecraft-1-logo-png-transparent.png" alt="minecraft icon">
                         </div>
                     </div>
                 </div>
@@ -655,32 +620,127 @@
                     </div>
                 </div>
             </div>
+            
+            <div class="social-links">
+                <a href="https://github.com" target="_blank" class="social-link">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+                <a href="#" target="_blank" class="social-link">
+                    <i class="fa-brands fa-discord"></i>
+                </a>
+                <a href="https://open.spotify.com" target="_blank" class="social-link">
+                    <i class="fa-brands fa-spotify"></i>
+                </a>
+            </div>
         </div>
 
         <div class="projects-container container view-hidden">
             <h1>Projects</h1>
             <div class="projects-grid">
-                <a href="/veximager.html" target="_blank" class="project-item">
-                    <img class="project-icon"
-                        src="https://i.postimg.cc/d34MVJwN/veximager.jpg>
+                <div class="project-item" 
+                     data-name="Vex Imager" 
+                     data-desc="A simple app the converts any image into C++ code that you can run on the vex brain to display images"
+                     data-link="/veximager.html"
+                     data-author="Glitch"
+                     data-collab="Cody">
+                    <img class="project-icon" src="https://i.postimg.cc/XNxK0gPN/veximager.jpg">
                     <p class="project-name">Vex Imager</p>
-                </a>
-                <a href="gkit.html" target="_blank" class="project-item">
-                    <img class="project-icon"
-                        src="https://image2url.com/images/1759596176637-d11ad332-7306-422e-af2b-b91e46893417.jpg">
-                    <p class="project-name">GKIT</p>
-                </a>
-                <a href="/whitet.html" target="_blank" class="project-item">
-                    <img class="project-icon"
-                        src="https://image2url.com/images/1759596618157-279d9507-1615-4b78-b732-76028a929d37.webp">
-                    <p class="project-name">Whitet</p>
-                </a>
-                <a href="#" target="_blank" class="project-item">
+                </div>
+
+                <div class="project-item" 
+                     data-name="GKIT" 
+                     data-status="discontinued"
+                     data-desc="A hack menu made for Gimkit!"
+                     data-link="/gkit.html"
+                     data-author="Glitch"
+                     data-collab="None">
+                    <img class="project-icon" src="https://image2url.com/images/1759596176637-d11ad332-7306-422e-af2b-b91e46893417.jpg">
+                    <p class="project-name">
+                        GKIT 
+                        <i class="fa-solid fa-triangle-exclamation discontinued-icon" title="Discontinued"></i>
+                    </p>
+                </div>
+
+                <div class="project-item" 
+                     data-name="Whitet" 
+                     data-status="discontinued"
+                     data-desc="A blooket spinoff with custom blooks, gamemodes and features!"
+                     data-link="/whitet.html"
+                     data-author="Trixter"
+                     data-collab="Glitch, Killer, Bagelpenguin, Dannydan, CoolDuck">
+                    <img class="project-icon" src="https://image2url.com/images/1759596618157-279d9507-1615-4b78-b732-76028a929d37.webp">
+                    <p class="project-name">
+                        Whitet
+                        <i class="fa-solid fa-triangle-exclamation discontinued-icon" title="Discontinued"></i>
+                    </p>
+                </div>
+
+                <div class="project-item" 
+                     data-name="Project Four" 
+                     data-desc="A placeholder for the fourth amazing project"
+                     data-link="#"
+                     data-author="Glitch"
+                     data-collab="TBD">
                     <img class="project-icon" src="https://placehold.co/120x120/f1f1f1f1/000000?text=Project+4">
                     <p class="project-name">Project Four</p>
-                </a>
+                </div>
             </div>
         </div>
+
+        <div class="about-container container view-hidden">
+            <h1>About Me</h1>
+            <div class="about-content">
+                <p class="about-text-content">
+                    Wsp, Im glitch, i like doing robotics, 3d printing, and playing games!
+                </p>
+                
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>glitch.blooket@gmail.com</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fa-brands fa-discord"></i>
+                        <span>@gli4ch.</span>
+                    </div>
+                </div>
+
+                <div class="top-songs-section">
+                    <h2 class="top-songs-header">My Favorite Song</h2>
+                    <div class="song-list" id="top-songs-list">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="project-details-modal" class="container view-hidden">
+            <div class="modal-header">
+                <button class="close-btn" id="close-modal-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </button>
+            </div>
+            <div class="project-modal-content">
+                <div class="modal-left">
+                    <img id="modal-img" src="" alt="Project Icon" class="modal-icon">
+                    <h2 id="modal-title" class="modal-project-name">Title</h2>
+                </div>
+                <div class="modal-right">
+                    <div id="modal-status">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>This project is discontinued</span>
+                    </div>
+
+                    <p id="modal-desc" class="modal-description">Description goes here...</p>
+                    <a id="modal-link" href="#" target="_blank" class="modal-link-btn">View Project</a>
+                    
+                    <div class="modal-credits">
+                        <div class="credit-item">Author: <span id="modal-author">Glitch</span></div>
+                        <div class="credit-item">Collaborator: <span id="modal-collab">Iceee</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -731,19 +791,76 @@
 
             const homeContainer = document.querySelector('.home-container');
             const projectsContainer = document.querySelector('.projects-container');
+            const aboutContainer = document.querySelector('.about-container');
+            const projectModal = document.getElementById('project-details-modal');
             const projectsButton = document.getElementById('projects-button');
             const homeButton = document.getElementById('home-button');
-            projectsButton.addEventListener('click', () => {
-                homeContainer.classList.add('view-hidden');
-                projectsContainer.classList.remove('view-hidden');
-                projectsButton.style.display = 'none';
-                homeButton.style.display = 'flex';
+            const aboutButton = document.getElementById('about-button');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            const projectItems = document.querySelectorAll('.project-item');
+            
+            const mTitle = document.getElementById('modal-title');
+            const mImg = document.getElementById('modal-img');
+            const mDesc = document.getElementById('modal-desc');
+            const mLink = document.getElementById('modal-link');
+            const mAuthor = document.getElementById('modal-author');
+            const mCollab = document.getElementById('modal-collab');
+            const mStatus = document.getElementById('modal-status');
+
+            projectItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const name = item.getAttribute('data-name');
+                    const desc = item.getAttribute('data-desc');
+                    const link = item.getAttribute('data-link');
+                    const author = item.getAttribute('data-author');
+                    const collab = item.getAttribute('data-collab');
+                    const status = item.getAttribute('data-status');
+                    const imgSrc = item.querySelector('img').src;
+
+                    mTitle.textContent = name;
+                    mDesc.textContent = desc;
+                    mLink.href = link;
+                    mAuthor.textContent = author;
+                    mCollab.textContent = collab;
+                    mImg.src = imgSrc;
+
+                    if(status === 'discontinued') {
+                        mStatus.style.display = 'flex';
+                    } else {
+                        mStatus.style.display = 'none';
+                    }
+
+                    projectsContainer.classList.add('view-hidden');
+                    projectModal.classList.remove('view-hidden');
+                });
             });
-            homeButton.addEventListener('click', () => {
+
+            closeModalBtn.addEventListener('click', () => {
+                projectModal.classList.add('view-hidden');
+                projectsContainer.classList.remove('view-hidden');
+            });
+
+            const hideAllViews = () => {
+                homeContainer.classList.add('view-hidden');
                 projectsContainer.classList.add('view-hidden');
+                aboutContainer.classList.add('view-hidden');
+                projectModal.classList.add('view-hidden');
+            };
+
+            projectsButton.addEventListener('click', () => {
+                hideAllViews();
+                projectsContainer.classList.remove('view-hidden');
+            });
+
+            homeButton.addEventListener('click', () => {
+                hideAllViews();
                 homeContainer.classList.remove('view-hidden');
-                homeButton.style.display = 'none';
-                projectsButton.style.display = 'flex';
+            });
+
+            aboutButton.addEventListener('click', () => {
+                hideAllViews();
+                aboutContainer.classList.remove('view-hidden');
             });
 
             (() => {
@@ -787,14 +904,17 @@
                     element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
                 });
             };
+            
             applyTiltEffect(profileAvatar);
             document.querySelectorAll('.project-icon').forEach(applyTiltEffect);
+            applyTiltEffect(document.getElementById('modal-img'));
+
 
             const swappingImage = document.getElementById('swapping-image');
             const imageUrls = [
                 'https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png',
                 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png',
-                'https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png'
+                'https://image-service.onefootball.com/transform?w=256&dpr=2&image=https://images.onefootball.com/icons/teams/164/57153.png'
             ];
             let currentImageIndexSwap = 0;
             setInterval(() => {
@@ -844,6 +964,50 @@
 
             currentSongIndex = Math.floor(Math.random() * songs.length);
             loadSong(currentSongIndex);
+
+            const topSongs = [
+                "https://open.spotify.com/track/0WtM2NBVQNNJLh6scP13H8"
+            ];
+            
+            const songListContainer = document.getElementById('top-songs-list');
+            
+            topSongs.forEach(link => {
+                fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(link)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const card = document.createElement('a');
+                        card.href = link;
+                        card.target = '_blank';
+                        card.className = 'song-card';
+                        
+                        let title = data.title;
+                        let artist = 'Travis Scott'; 
+                        let songName = title;
+                        
+                        const parts = title.split(' - ');
+                        if (parts.length > 1) {
+                            artist = parts[0];
+                            songName = parts.slice(1).join(' - ');
+                        } else {
+                            if(title.toLowerCase().includes('travis scott')) {
+                                artist = 'Travis Scott';
+                                songName = title.replace(/travis scott/i, '').replace(/ - /g, '').trim();
+                            } else if (parts.length === 1) {
+                                artist = 'Travis Scott'; 
+                            }
+                        }
+
+                        card.innerHTML = `
+                            <img src="${data.thumbnail_url}" class="song-thumb" alt="${songName}">
+                            <div class="song-details">
+                                <span class="song-name">${songName}</span>
+                                <span class="song-artist">${artist}</span>
+                            </div>
+                        `;
+                        songListContainer.appendChild(card);
+                    })
+                    .catch(err => console.error('Error loading song:', err));
+            });
         });
     </script>
 </body>
