@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokeprint</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap');
+        
+        :root {
+            --card-w: 2.5in;
+            --card-h: 3.5in;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        @media print {
+            @page { size: portrait; margin: 0; }
+            html, body { height: auto !important; overflow: visible !important; background: white !important; }
+            .no-print { display: none !important; }
+            .print-only-container { display: block !important; }
+            .studio-layout { display: none !important; }
+
+            .print-page {
+                height: 11in;
+                width: 8.5in;
+                page-break-after: always;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: flex-start !important;
+                background: white !important;
+            }
+
+            .binder-wrapper { padding: 0.4in 0.5in !important; }
+
+            .binder-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, var(--card-w)) !important;
+                grid-template-rows: repeat(3, var(--card-h)) !important;
+                gap: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                background: white !important;
+                border: none !important;
+                transform: scale(0.96);
+                transform-origin: top center;
+            }
+
+            .ph-card { border: 1pt solid #000 !important; page-break-inside: avoid; }
+        }
+
+        .print-only-container { display: none; }
+        .studio-layout { display: grid; grid-template-columns: 1fr 350px; height: calc(100vh - 64px); }
+        .canvas-area { background-color: #0a0a0a; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        .side-panel { background-color: #111; border-left: 1px solid #222; padding: 25px; display: flex; flex-direction: column; gap: 25px; }
+
+        .binder-grid {
+            display: grid; grid-template-columns: repeat(3, var(--card-w)); grid-template-rows: repeat(3, var(--card-h));
+            gap: 8px; background: #1a1a1a; padding: 10px; border-radius: 8px; box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+        }
+
+        /* --- CARD UI --- */
+        .ph-card {
+            width: var(--card-w); height: var(--card-h); background: #fff; color: #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 0.2in; box-sizing: border-box; position: relative; text-align: center; overflow: hidden;
+        }
+
+        .art-only-mode { padding: 0 !important; border: none !important; }
+        .full-art-img { width: 100%; height: 100%; object-fit: cover; }
+        .art-container { width: 100%; height: 1.6in; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .art-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .card-name { font-weight: 900; font-size: 13pt; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px; width: 100%; }
+        .ph-footer { width: 100%; border-top: 1px solid #eee; padding-top: 5px; }
+        .set-name { font-size: 8pt; font-weight: 800; color: #555; text-transform: uppercase; }
+        .card-id { font-size: 6.5pt; color: #aaa; margin-top: 1px; font-weight: 700; }
+
+        .set-icon-img { position: absolute; bottom: 12px; left: 15px; height: auto; width: 70px; object-fit: contain; }
+
+        .price-box { position: absolute; bottom: 12px; right: 18px; text-align: right; }
+        .price-val { font-weight: 900; font-size: 11pt; color: #000; }
+        .price-label { font-size: 5pt; font-weight: 800; text-transform: uppercase; color: #bbb; }
+
+        .bw-btn {
+            background: #222; color: #fff; font-weight: 800; text-transform: uppercase; font-size: 10px;
+            padding: 12px; border-radius: 4px; border: 1px solid #333; transition: 0.2s; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; justify-content: center;
+        }
+        .bw-btn.active { background: #fff; color: #000; border-color: #fff; }
+
+        /* SWITCH STYLES */
+        .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #1a1a1a; border-radius: 6px; border: 1px solid #222; }
+        .switch-track { width: 36px; height: 18px; border-radius: 20px; cursor: pointer; position: relative; transition: 0.3s; }
+        .switch-handle { width: 14px; height: 14px; background: #000; border-radius: 50%; position: absolute; top: 2px; transition: 0.3s; }
+
+        .nav-arrow { font-size: 32px; color: #fff; opacity: 0.2; transition: 0.2s; cursor: pointer; }
+        .nav-arrow:not(.disabled):hover { opacity: 1; }
+        .nav-arrow.disabled { opacity: 0.05; cursor: default; }
+
+        .modal-bg { background: rgba(0,0,0,0.98); backdrop-filter: blur(15px); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Custom Switch Component
+        const Switch = ({ label, icon, enabled, onToggle }) => (
+            <div className="switch-row">
+                <div className="flex items-center gap-3">
+                    <i className={`fas ${icon} text-[10px] text-zinc-500`}></i>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+                </div>
+                <div onClick={() => onToggle(!enabled)} 
+                     className={`switch-track ${enabled ? 'bg-white' : 'bg-zinc-800'}`}>
+                    <div className={`switch-handle ${enabled ? 'left-[20px] bg-black' : 'left-[2px] bg-zinc-500'}`}></div>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [binderPages, setBinderPages] = useState([Array(9).fill(null)]);
+            const [currentPage, setCurrentPage] = useState(0);
+            const [activeSlot, setActiveSlot] = useState(null);
+            
+            // UI States
+            const [viewMode, setViewMode] = useState('placeholder'); 
+            const [showPrice, setShowPrice] = useState(true);
+            const [showSetIcon, setShowSetIcon] = useState(false);
+            const [showSetModal, setShowSetModal] = useState(false);
+            const [setsList, setSetsList] = useState([]);
+
+            // Search Persistence
+            const [query, setQuery] = useState("");
+            const [results, setResults] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                fetch('https://api.tcgdex.net/v2/en/sets')
+                    .then(res => res.json())
+                    .then(data => setSetsList(data.filter(s => s.logo).reverse()));
+            }, []);
+
+            const getBestPrice = (fullCard) => {
+                const pricing = fullCard.pricing;
+                if (!pricing) return "N/A";
+                if (pricing.tcgplayer) {
+                    const tp = pricing.tcgplayer;
+                    const variants = ['normal', 'holo', 'reverse', 'unlimited', '1stEdition'];
+                    for (const v of variants) {
+                        if (tp[v]) {
+                            const val = tp[v].marketPrice || tp[v].midPrice || tp[v].lowPrice;
+                            if (val) return `$${val.toFixed(2)}`;
+                        }
+                    }
+                }
+                if (pricing.cardmarket) {
+                    const cm = pricing.cardmarket;
+                    const val = cm.avg || cm.trend || cm.low;
+                    if (val) return `€${val.toFixed(2)}`;
+                }
+                return "N/A";
+            };
+
+            const searchAPI = async () => {
+                if (!query) return;
+                setLoading(true);
+                try {
+                    const res = await fetch(`https://api.tcgdex.net/v2/en/cards?name=${query}`);
+                    const data = await res.json();
+                    if (Array.isArray(data)) setResults(data.filter(c => c.image));
+                } catch (e) { console.error(e); }
+                setLoading(false);
+            };
+
+            const selectCard = async (basicCard) => {
+                setLoading(true);
+                try {
+                    const res = await fetch(`https://api.tcgdex.net/v2/en/cards/${basicCard.id}`);
+                    const full = await res.json();
+                    const priceValue = getBestPrice(full);
+
+                    const newPages = [...binderPages];
+                    newPages[currentPage][activeSlot] = {
+                        name: full.name,
+                        image: full.image ? `${full.image}/high.webp` : null,
+                        set: full.set?.name || "Standard",
+                        setLogo: full.set?.logo ? `${full.set.logo}.png` : null,
+                        num: full.localId || "???",
+                        total: full.set?.cardCount?.official || full.set?.cardCount?.total || "???",
+                        price: priceValue
+                    };
+                    setBinderPages(newPages);
+                    setActiveSlot(null);
+                } catch (e) { console.error(e); }
+                setLoading(false);
+            };
+
+            const loadFullSet = async (setId) => {
+                setLoading(true);
+                setShowSetModal(false);
+                try {
+                    const res = await fetch(`https://api.tcgdex.net/v2/en/sets/${setId}`);
+                    const data = await res.json();
+                    const cards = data.cards;
+                    
+                    const newPages = [];
+                    for (let i = 0; i < cards.length; i += 9) {
+                        const chunk = cards.slice(i, i + 9);
+                        const pData = chunk.map(c => ({
+                            name: c.name,
+                            image: `${c.image}/high.webp`,
+                            set: data.name,
+                            setLogo: data.logo ? `${data.logo}.png` : null,
+                            num: c.localId,
+                            total: data.cardCount.official,
+                            price: "N/A"
+                        }));
+                        while(pData.length < 9) pData.push(null);
+                        newPages.push(pData);
+                    }
+                    setBinderPages(newPages);
+                    setCurrentPage(0);
+                } catch (e) { console.error(e); }
+                setLoading(false);
+            };
+
+            const CardUI = ({ card, i, onClick }) => (
+                <div onClick={() => onClick && onClick(i)} 
+                    className={`ph-card cursor-pointer group transition border-none ${viewMode === 'art' && card ? 'art-only-mode' : ''} ${activeSlot === i ? 'ring-2 ring-white' : ''}`}>
+                    {card ? (
+                        viewMode === 'art' ? (
+                            <img src={card.image} className="full-art-img" />
+                        ) : (
+                            <React.Fragment>
+                                <div className="art-container"><img src={card.image} className="art-img" /></div>
+                                <div className="card-name">{card.name}</div>
+                                <div className="ph-footer">
+                                    {!showSetIcon && <div className="set-name">{card.set}</div>}
+                                    <div className="card-id">{card.num}/{card.total}</div>
+                                </div>
+                                {showSetIcon && card.setLogo && <img src={card.setLogo} className="set-icon-img" />}
+                                {showPrice && (
+                                    <div className="price-box">
+                                        <div className="price-label">Market Value</div>
+                                        <div className="price-val">{card.price}</div>
+                                    </div>
+                                )}
+                            </React.Fragment>
+                        )
+                    ) : (
+                        <div className="m-auto opacity-10 group-hover:opacity-100 flex flex-col items-center gap-2 no-print transition text-zinc-400">
+                            <i className="fas fa-plus-circle text-2xl"></i>
+                            <span className="text-[9px] font-black uppercase tracking-widest">Slot {i+1}</span>
+                        </div>
+                    )}
+                </div>
+            );
+
+            return (
+                <div className="h-screen flex flex-col">
+                    <nav className="no-print h-16 bg-black border-b border-zinc-800 flex items-center justify-between px-8 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-white text-black font-black flex items-center justify-center rounded italic">P</div>
+                            <span className="font-bold text-lg uppercase tracking-tight italic">Pokeprint</span>
+                        </div>
+                        <div className="flex gap-4">
+                            <button onClick={() => setBinderPages([Array(9).fill(null)])} className="text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest transition">Reset</button>
+                            <button onClick={() => window.print()} className="bg-white text-black px-6 py-2 rounded font-black uppercase text-xs">Print All</button>
+                        </div>
+                    </nav>
+
+                    <div className="print-only-container">
+                        {binderPages.map((pg, idx) => (
+                            <div key={idx} className="print-page">
+                                <div className="binder-wrapper">
+                                    <div className="binder-grid">
+                                        {pg.map((card, i) => <CardUI key={i} card={card} i={i} />)}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="studio-layout flex-1 no-print">
+                        <main className="canvas-area">
+                            <div className="binder-grid">
+                                {binderPages[currentPage].map((card, i) => (
+                                    <CardUI key={i} card={card} i={i} onClick={setActiveSlot} />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-10 mt-10">
+                                <i className={`fas fa-caret-left nav-arrow ${currentPage === 0 ? 'disabled' : ''}`} onClick={() => currentPage > 0 && setCurrentPage(currentPage - 1)}></i>
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Page {currentPage + 1} / {binderPages.length}</div>
+                                <i className={`fas fa-caret-right nav-arrow ${currentPage === binderPages.length - 1 ? 'disabled' : ''}`} onClick={() => currentPage < binderPages.length - 1 && setCurrentPage(currentPage + 1)}></i>
+                            </div>
+                        </main>
+
+                        <aside className="side-panel">
+                            <div>
+                                <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Binder</h3>
+                                <button onClick={() => setBinderPages([...binderPages, Array(9).fill(null)])} className="bw-btn w-full mb-2">
+                                    <i className="fas fa-plus-square"></i> New Page
+                                </button>
+                                <button onClick={() => setShowSetModal(true)} className="bw-btn w-full">
+                                    <i className="fas fa-layer-group"></i> Presets
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Settings</h3>
+                                <div className="flex flex-col gap-2 mb-4">
+                                    <button onClick={() => setViewMode('placeholder')} className={`bw-btn ${viewMode === 'placeholder' ? 'active' : ''}`}>
+                                        <i className="fas fa-file-alt"></i> Placeholder
+                                    </button>
+                                    <button onClick={() => setViewMode('art')} className={`bw-btn ${viewMode === 'art' ? 'active' : ''}`}>
+                                        <i className="fas fa-image"></i> Art Only
+                                    </button>
+                                </div>
+                                
+                                <Switch label="Show Prices" icon="fa-dollar-sign" enabled={showPrice} onToggle={setShowPrice} />
+                                <Switch label="Set Icons" icon="fa-icons" enabled={showSetIcon} onToggle={setShowSetIcon} />
+                            </div>
+                        </aside>
+                    </div>
+
+                    {/* */}
+                    {showSetModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center modal-bg p-10">
+                            <div className="bg-[#0a0a0a] w-full max-w-6xl h-[80vh] rounded border border-zinc-800 flex flex-col overflow-hidden text-white shadow-2xl">
+                                <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-black">
+                                    <h2 className="text-xl font-black uppercase italic tracking-tighter text-white">Select Preset Expansion</h2>
+                                    <button onClick={() => setShowSetModal(false)} className="text-zinc-500 hover:text-white transition"><i className="fas fa-times-circle text-xl"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-10 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-10">
+                                    {setsList.map(set => (
+                                        <div key={set.id} onClick={() => loadFullSet(set.id)} className="flex flex-col items-center gap-4 cursor-pointer group">
+                                            <img src={set.logo + '.png'} className="h-16 object-contain group-hover:scale-110 transition grayscale group-hover:grayscale-0" />
+                                            <p className="text-[9px] font-bold text-zinc-500 uppercase text-center group-hover:text-white leading-tight">{set.name}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* */}
+                    {activeSlot !== null && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center modal-bg p-4 text-white">
+                            <div className="bg-[#0a0a0a] w-full max-w-6xl h-[85vh] rounded border border-zinc-800 flex flex-col overflow-hidden shadow-2xl">
+                                <div className="p-6 border-b border-zinc-800 flex flex-col md:flex-row gap-6 justify-between items-center bg-black/50">
+                                    <h2 className="text-xl font-black uppercase italic tracking-tighter leading-none">Database</h2>
+                                    <div className="flex gap-2 w-full md:w-auto">
+                                        <input autoFocus className="bg-black border border-zinc-800 rounded px-5 py-3 text-sm outline-none focus:border-white transition flex-1 md:w-80 text-white"
+                                            placeholder="Pokémon Name..." value={query} onChange={(e) => setQuery(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && searchAPI()}/>
+                                        <button onClick={searchAPI} className="bg-white text-black px-8 rounded font-black uppercase text-xs hover:bg-zinc-200 transition">Search</button>
+                                        <button onClick={() => setActiveSlot(null)} className="bg-zinc-900 px-4 rounded hover:bg-zinc-800 transition"><i className="fas fa-times"></i></button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
+                                    {loading ? (
+                                        <div className="col-span-full flex flex-col items-center justify-center h-full opacity-50 text-white"><i className="fas fa-circle-notch fa-spin text-3xl mb-4 text-white"></i></div>
+                                    ) : results.length > 0 ? results.map(card => (
+                                        <div key={card.id} onClick={() => selectCard(card)} className="flex flex-col gap-2 group cursor-pointer animate-in fade-in duration-300">
+                                            <div className="aspect-[2.5/3.5] bg-black rounded overflow-hidden border border-zinc-800 group-hover:border-white transition-all relative">
+                                                <img src={`${card.image}/low.webp`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <span className="bg-white text-black px-3 py-1 rounded text-[9px] font-black uppercase">Select</span>
+                                                </div>
+                                            </div>
+                                            <div className="px-1 text-center"><div className="font-bold text-[11px] truncate uppercase tracking-tight text-zinc-200">{card.name}</div><div className="text-[9px] text-zinc-500 truncate font-bold uppercase tracking-tighter">{card.set?.name}</div></div>
+                                        </div>
+                                    )) : <div className="col-span-full flex items-center justify-center h-64 opacity-20"><i className="fas fa-search text-5xl text-white"></i></div>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
